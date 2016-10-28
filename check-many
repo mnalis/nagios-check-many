@@ -137,8 +137,6 @@ my $last_perf = '';
 
 my @all = ();
 
-exit 99;
-
 # check if we have new maximum value 
 # note that it is more complicated than simple integer check, as UNKNOWN state is not worst!
 #
@@ -172,13 +170,13 @@ sub consolidate {
     $last_cmd = $exit_cmd[$x];
 }
 
-# consolidate all checks (group by same disk)
+# consolidate all checks (group by same cmd)
 for my $x (0 .. $#exit_cmd) {
     consolidate($x) if ($exit_cmd[$x] ne $last_cmd);
     if (is_new_max($exit_value[$x], $max_exit_level)) {	# final result is worst result we've had (0=OK, 3=UNKNOWN, 1=WARNING, 2=CRITICAL);
         $max_exit_level = $exit_value[$x];
         $output_code = $exit_code[$x];
-        if ($exit_value[$x]) {	# in non-OK status (needed becase is_new_max(0,0) will return TRUE, etc)
+        if ($exit_value[$x]) {	# in non-OK status (needed because is_new_max(0,0) will return TRUE, etc)
             $err_count++;
             $last_err = "err(s). $err_count non-OK msgs, last is " . $exit_cmd[$x] .": " . $exit_txt[$x];
             $last_err =~ s/\n/; /g;
@@ -192,7 +190,7 @@ for my $x (0 .. $#exit_cmd) {
 consolidate($#exit_cmd);
 
 
-# join output for multiple disks if it is the same
+# join output for multiple cmds if it is the same
 my $prev_output = '';
 my @prev_disks = ();
 @all = sort {($a->{msg} cmp $b->{msg}) || $a->{disk} cmp $b->{disk} } @all;	# sort by output message (and disk)
