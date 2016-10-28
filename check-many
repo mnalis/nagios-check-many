@@ -1,27 +1,12 @@
 #!/usr/bin/perl -w
-# GPLv3+ Matija Nalis <mnalis-perl@axe.tomsoft.hr> started 2014-02-06
-# call multiple S.M.A.R.T. plugins and check status
-# called for all hard disks in system
+# GPLv3+ Matija Nalis <mnalis-perl@axe.tomsoft.hr> started 2016-10-28
+# call multiple nagios plugins and check status
 
-# Installation:
-# Add to sudoers: nagios ALL=(root) NOPASSWD:/usr/local/bin/check_multi_smart
-# Add to nrpe.cfg: command[check_multi_smart]=sudo /usr/local/bin/check_multi_smart
-# Add to /etc/check_multi_smart.ignore: /dev/sdx check_ide_smart check_smartmon -- to ignore that commands for that disk
-
-
-
-# FIXME vidi dodatne atribute na http://en.wikipedia.org/wiki/S.M.A.R.T.
-  
-our $VERSION='1.01';
+our $VERSION='1.00';
 
 use strict;
 
-my @paths = qw( /home/mnalis/tomsoft_source/nagios-smart-multi /usr/lib/nagios/plugins /usr/local/bin /usr/local/sbin );	# NB hardcoded devel path will be removed on "make install"
-my $ignore_file = '/etc/check_multi_smart.ignore';
-
-my $check_ide_smart_cmd = 'check_ide_smart';	# from generic Debian Squeeze package nagios-plugins-basic
-my $check_smart_cmd = 'check_smart';		# patched on katara from http://exchange.nagios.org/directory/Plugins/System-Metrics/Storage-Subsystem/Check-SMART-status-modified/details
-my $check_smartmon_cmd = 'check_smartmon';	# patched on katara from https://www.monitoringexchange.org/inventory/Check-Plugins/Operating-Systems/Linux/check_smartmon
+my @paths = qw( /usr/lib/nagios/plugins /usr/local/lib/nagios/plugins /usr/local/bin /usr/local/sbin );
 
 my $DEBUG = 0;
 
@@ -35,10 +20,11 @@ my @exit_perf = ();
 # parse command line options 
 if (defined($ARGV[0]) and $ARGV[0] =~ /^(-h|--help)$/) {
     print <<EOF;
-check_multi_smart v$VERSION
+check-many v$VERSION
 
-This plugin checks all hard disk devices (except those specified in /etc/check_multi_smart.ignore)
-using several plugins for extensive S.M.A.R.T. errors coverage.
+This plugin aggregates results of multiple other nagios
+plugin checks, returning most critical status of them all 
+and joining all performance data returned.
 
 Options:
 \t-h, --help
@@ -46,27 +32,6 @@ Options:
 
 EOF
     exit 0;
-}
-
-
-my %IGNORE_CMDS = ();
-# parse  /etc/check_multi_smart.ignore config file
-# format: <disk> <cmd1> [cmd2 [cmd3] ...]
-sub parse_config_file
-{
-    return unless -e $ignore_file;	# it's OK if config file is missing, assume full checks in that case
-    open my $ign, '<', $ignore_file or die "can't read: $ignore_file: $!";
-    while (<$ign>) {
-      next if /^\s*#/;	# skip comments
-      next if /^\s*$/;	# skip empty lines
-      
-      my ($disk, @cmds) = split;
-      foreach my $cmd (@cmds) {
-          $IGNORE_CMDS{"${disk}_${cmd}"} = 1;
-          $DEBUG > 1 && print "ignore $cmd for $disk\n";
-      }
-    }
-    close $ign;
 }
 
 
@@ -95,7 +60,7 @@ sub handle_cmd
     my $cmd = $_[0];
     
     if ($IGNORE_CMDS{"${disk}_${cmd}"}) {
-        $DEBUG > 1 && print "ignoring $disk for command $cmd as specified in /etc/check_multi_smart.ignore\n";
+        $DEBUG > 1 && print "ignoring $disk for command $cmd as specified in /etc/check-many.ignore\n";
         return;
     }
     

@@ -5,7 +5,7 @@ all:
 	
 install:
 	test -d $(PLUGIN_DIR) || install -o root -g root -d $(PLUGIN_DIR)
-	install -o root -g root -m 0755 nagios-check-many $(PLUGIN_DIR)
+	install -o root -g root -m 0755 check-many $(PLUGIN_DIR)
 		
 clean:
 	find . -name "*~" -print0 | xargs -0r rm -f --
