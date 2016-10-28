@@ -1,0 +1,6 @@
+nagios/icinga plugin to aggregate results of multiple other nagios
+plugin checks, returning most critical status of them all and joining
+performance data. 
+
+Based on idea presented on https://nagios-plugins.org/doc/check-many.html 
+as other two implementations on https://exchange.nagios.org were lacking.
