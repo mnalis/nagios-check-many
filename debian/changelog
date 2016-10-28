@@ -1,0 +1,5 @@
+nagios-smart-multi (1.00) jessie; urgency=low
+
+  * Initial Release (loosely based on nagios-smart-multi)
+
+ -- Matija Nalis (Tomsoft Debian repo) <mnalis-debian@axe.tomsoft.hr>  Fri, 28 Oct 2016 21:39:31 +0200

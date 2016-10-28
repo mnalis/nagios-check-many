@@ -1,0 +1,260 @@
+#!/usr/bin/perl -w
+# GPLv3+ Matija Nalis <mnalis-perl@axe.tomsoft.hr> started 2014-02-06
+# call multiple S.M.A.R.T. plugins and check status
+# called for all hard disks in system
+
+# Installation:
+# Add to sudoers: nagios ALL=(root) NOPASSWD:/usr/local/bin/check_multi_smart
+# Add to nrpe.cfg: command[check_multi_smart]=sudo /usr/local/bin/check_multi_smart
+# Add to /etc/check_multi_smart.ignore: /dev/sdx check_ide_smart check_smartmon -- to ignore that commands for that disk
+
+
+
+# FIXME vidi dodatne atribute na http://en.wikipedia.org/wiki/S.M.A.R.T.
+  
+our $VERSION='1.01';
+
+use strict;
+
+my @paths = qw( /home/mnalis/tomsoft_source/nagios-smart-multi /usr/lib/nagios/plugins /usr/local/bin /usr/local/sbin );	# NB hardcoded devel path will be removed on "make install"
+my $ignore_file = '/etc/check_multi_smart.ignore';
+
+my $check_ide_smart_cmd = 'check_ide_smart';	# from generic Debian Squeeze package nagios-plugins-basic
+my $check_smart_cmd = 'check_smart';		# patched on katara from http://exchange.nagios.org/directory/Plugins/System-Metrics/Storage-Subsystem/Check-SMART-status-modified/details
+my $check_smartmon_cmd = 'check_smartmon';	# patched on katara from https://www.monitoringexchange.org/inventory/Check-Plugins/Operating-Systems/Linux/check_smartmon
+
+my $DEBUG = 0;
+
+my @exit_disk = ();
+my @exit_value = ();
+my @exit_code = ();
+my @exit_txt = ();
+my @exit_perf = ();
+
+
+# parse command line options 
+if (defined($ARGV[0]) and $ARGV[0] =~ /^(-h|--help)$/) {
+    print <<EOF;
+check_multi_smart v$VERSION
+
+This plugin checks all hard disk devices (except those specified in /etc/check_multi_smart.ignore)
+using several plugins for extensive S.M.A.R.T. errors coverage.
+
+Options:
+\t-h, --help
+\t\tPrint this help screen
+
+EOF
+    exit 0;
+}
+
+
+my %IGNORE_CMDS = ();
+# parse  /etc/check_multi_smart.ignore config file
+# format: <disk> <cmd1> [cmd2 [cmd3] ...]
+sub parse_config_file
+{
+    return unless -e $ignore_file;	# it's OK if config file is missing, assume full checks in that case
+    open my $ign, '<', $ignore_file or die "can't read: $ignore_file: $!";
+    while (<$ign>) {
+      next if /^\s*#/;	# skip comments
+      next if /^\s*$/;	# skip empty lines
+      
+      my ($disk, @cmds) = split;
+      foreach my $cmd (@cmds) {
+          $IGNORE_CMDS{"${disk}_${cmd}"} = 1;
+          $DEBUG > 1 && print "ignore $cmd for $disk\n";
+      }
+    }
+    close $ign;
+}
+
+
+# parse ignore file
+parse_config_file();
+
+# execute command if present
+sub exec_cmd
+{
+    my $cmd = shift;
+
+    foreach my $p (@paths) {	# find full path
+      if (-e "$p/$cmd") { $cmd = "$p/$cmd"; last; }
+    }
+    
+    $DEBUG > 1 && print "using full path for $cmd\n";
+    
+    my $args = join (' ', @_);
+    return `$cmd $args`;
+}
+
+# executes command and handle output
+sub handle_cmd
+{
+    my $disk = $_[$#_];	# NB kludge, get disk - assume always last parameter passed
+    my $cmd = $_[0];
+    
+    if ($IGNORE_CMDS{"${disk}_${cmd}"}) {
+        $DEBUG > 1 && print "ignoring $disk for command $cmd as specified in /etc/check_multi_smart.ignore\n";
+        return;
+    }
+    
+    my $output = exec_cmd (@_);
+    my $exit_sig = $? & 127;
+    my $exit_code = $? >> 8;
+    
+    if ($exit_sig) {
+       $exit_code = 3; $output = "UNKNOWN: exit_sig=$exit_sig " . $output;
+    }
+    
+    
+    my $_code;
+    my $_msg;
+    my $_perf;
+    $DEBUG > 2 && print "za cmd=" . join(' ',@_) . ", disk=$disk: \n";
+#    print "\tfull=$output, code=$?\n";
+    if ($output =~ /^(OK|CRITICAL|WARNING|UNKNOWN)\s*[-:]?\s+(.*?)(\|(.*))?$/) {
+         $_code = $1;
+         $_msg = $2;
+         $_perf = defined($4) ? $4 : '';
+         $DEBUG > 2 && print "\tnasao output: code=$_code, msg=$_msg, perf=$_perf\n";
+    } else {
+         $exit_code = 3;
+         $_code = 'UNKNOWN';
+         $_msg = "unknown output: $output";
+         $_perf = '';
+         $DEBUG > 2 && print "$_msg\n";
+    }
+
+    push @exit_disk, $disk;
+    push @exit_value, $exit_code;
+    push @exit_code, $_code;
+    push @exit_txt, $_msg;
+    push @exit_perf, $_perf;
+}
+
+{
+my @disks = glob("/dev/[hs]d*[a-z]");
+# FIXME kludge for test DELME @disks = qw (/dev/sdb /dev/sda /dev/sdg /dev/sdc);
+
+
+foreach my $disk (@disks) {
+    if ($disk =~ m{^(/dev/[a-z0-9/]+)$}) { $disk = $1 } else { die "invalid disk $disk" }
+    handle_cmd ($check_ide_smart_cmd, '-n', '-d', $disk);
+    handle_cmd ($check_smart_cmd, '-i', 'sat', '-d', $disk);
+    handle_cmd ($check_smartmon_cmd, '-d', $disk);
+}
+}
+
+if ($DEBUG > 1) {
+  print "\n\n\n";
+  print "disks = " . join (", ", @exit_disk) . "\n\n";
+  print "values = " . join (", ", @exit_value) . "\n\n";
+  print "code = " . join (", ", @exit_code) . "\n\n";
+  print "txt = " . join (", ", @exit_txt) . "\n\n";
+  print "perf = " . join (", ", @exit_perf) . "\n\n";
+}
+
+
+my $max_exit_level = 0;
+my $output_code = '';
+my $last_err = 'All SMART checks OK.';
+my $err_count = 0;
+my $output_text = '';
+my $perfdata = '';
+
+my $last_disk = $exit_disk[0];
+my $last_msg = '';
+my $last_perf = '';
+
+my @all = ();
+
+# check if we have new maximum value 
+# note that it is more complicated than simple integer check, as UNKNOWN state is not worst!
+#
+# rating is (from better to worse): (0=OK, 3=UNKNOWN, 1=WARNING, 2=CRITICAL)
+# 
+sub is_new_max
+{
+    my ($cur, $old) = @_;
+    
+    $DEBUG > 2 && print "check $old <=> $cur\n";
+    die "invalid return value $old => $cur" if ($old > 3) or ($old < 0) or ($cur > 3) or ($cur < 0);
+    
+    if ($old == 0) { return 1 }			# if we were OK before, anything else is more important!
+    if ($old == 2) { return 0 }			# if we were CRITICAL before, nothing else could be more important
+    if ($old == 1) { return ($cur == 2) }	# if we were WARNING before, only CRITICAL is more important, others are not
+    if ($old == 3) { return ($cur != 0) }	# if we were UNKNOWN before, only OK is less important
+}
+
+# consolidate disk data
+sub consolidate {
+    my ($x) = @_;
+    $DEBUG > 1 && print "consolidating at $x, last_disk=$last_disk\n";
+    $DEBUG > 1 && print "full msg=$last_msg\n";
+    $DEBUG > 1 && print "full perf=$last_perf\n\n";
+
+    $last_msg =~ s/\n/, /g;
+    push @all, { disk=> $last_disk, msg => $last_msg, perf => $last_perf };
+    
+    $last_msg = '';
+    $last_perf = '';
+    $last_disk = $exit_disk[$x];
+}
+
+# consolidate all checks (group by same disk)
+for my $x (0 .. $#exit_disk) {
+    consolidate($x) if ($exit_disk[$x] ne $last_disk);
+    if (is_new_max($exit_value[$x], $max_exit_level)) {	# final result is worst result we've had (0=OK, 3=UNKNOWN, 1=WARNING, 2=CRITICAL);
+        $max_exit_level = $exit_value[$x];
+        $output_code = $exit_code[$x];
+        if ($exit_value[$x]) {	# in non-OK status (needed becase is_new_max(0,0) will return TRUE, etc)
+            $err_count++;
+            $last_err = "err(s). $err_count non-OK msgs, last is " . $exit_disk[$x] .": " . $exit_txt[$x];
+            $last_err =~ s/\n/; /g;
+            $DEBUG > 1 && print "\t$err_count msgs, cur= " . $exit_txt[$x] . "\n";
+        }
+    }
+    $last_msg .= ($last_msg?', ':'') . $exit_txt[$x];
+    $last_perf .= ($last_perf?' ':'') . $exit_perf[$x];
+    $DEBUG > 1 && print "x=$x, " . $exit_disk[$x] . "\n";
+}
+consolidate($#exit_disk);
+
+
+# join output for multiple disks if it is the same
+my $prev_output = '';
+my @prev_disks = ();
+@all = sort {($a->{msg} cmp $b->{msg}) || $a->{disk} cmp $b->{disk} } @all;	# sort by output message (and disk)
+
+
+# compresses list of /dev/sda, /dev/sdb, /dev/sdg into /dev/sd[abg] format [FIXME unfinished, currently return uncompressed list]
+sub compress_disks
+{
+  $DEBUG > 1 && print "sorted compress_disks=" . join(' ', sort @_) . "\n";
+  return join(', ', @_);
+}
+
+# merge multiple messages for different disks
+sub merge_msg
+{
+    return unless $prev_output;
+    $output_text .= compress_disks(@prev_disks) . ": $prev_output\n";
+    $DEBUG > 1 && print "merge_msg prev=$prev_output for disks " . join(', ', @prev_disks) . "\n";
+    @prev_disks = ();
+}
+
+for my $x (0 .. $#all) {
+    if ($prev_output ne $all[$x]->{msg}) { merge_msg() }
+    $perfdata .= $all[$x]->{disk} . ': ' .  $all[$x]->{perf} . "\n";
+    $DEBUG > 2 && print "x=$x, disk=" . $all[$x]->{disk} . ", msg=" . $all[$x]->{msg} . "\n";
+    $DEBUG > 3 && print "x=$x, disk=" . $all[$x]->{disk} . ", perf=" . $all[$x]->{perf} . "\n";
+    $prev_output = $all[$x]->{msg};
+    push @prev_disks, $all[$x]->{disk};
+}
+merge_msg();
+chomp($output_text);
+
+
+print "$output_code $last_err\n$output_text|$perfdata\n";
+exit $max_exit_level;
