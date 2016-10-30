@@ -1,4 +1,4 @@
---- implement functions from https://nagios-plugins.org/doc/check-many.html 
+(1) implement other options from https://nagios-plugins.org/doc/check-many.html 
 
 -s, --shell=<always|never|auto>
    Specify when a shell should be invoked for executing commands.  "always"
@@ -17,9 +17,6 @@
    ("all").  "first-fail" stops at the first non-ok check and returns it, while
    "first-ok" stops at the first successful check and returns it.  The latter
    two override --status and --output and return the plugins's instead.
-
--f, --file=FILE
-   Read checks from FILE instead of STDIN.
 
 --output=<normal|oneline|status>
    "normal" outputs Nagios v3+ multi-line result, first line being a summary of

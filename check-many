@@ -25,11 +25,21 @@ my $DEBUG = 0;
 my $opt_help = 0;
 my $cmdfile = '';
 
+my ($opt_shell, $opt_delimiter, $opt_process, $opt_output);
+
 my $result = GetOptions ( "help|h" => \$opt_help,
                           "file|f=s"   => \$cmdfile,
+                          "shell|s=s"  => \$opt_shell,
+                          "delimiter|d=s"  => \$opt_delimiter,
+                          "process|P=s"  => \$opt_process,
+                          "output=s"  => \$opt_output,
                           "debug=i"  => \$DEBUG,
                           );
-                                                              
+                                                         
+if ($opt_shell or $opt_delimiter or $opt_process or $opt_output) {
+    print "This option is not yet implemented.\n";
+    exit 50;
+}                                                              
 
 if ($opt_help) {
     print <<EOF;
@@ -42,8 +52,17 @@ and joining all performance data returned.
 Options:
 \t-h, --help
 \t\tPrint this help screen
+\t-f, --file
+\t\tread commands from file instead of STDIN
 \t--debug
 \t\tset debug level
+
+Unsupported yet:
+\t-s, --shell=<always|never|auto>
+\t-d, --delimiter=CHARACTER
+\t-P, --process=<all|first-fail|first-ok>
+\t--output=<normal|oneline|status>
+
 
 EOF
     exit 99;
