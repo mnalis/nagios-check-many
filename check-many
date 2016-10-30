@@ -3,13 +3,13 @@
 
 # FIXME use -T
 
-our $VERSION='1.01';
+our $VERSION='1.02';
 
 use strict;
+use Getopt::Long qw (:config auto_version auto_help);
 
 my @paths = qw(/usr/local/lib/nagios/plugins /usr/lib/nagios/plugins /usr/local/bin /usr/local/sbin /usr/bin /usr/sbin /bin /sbin);
 
-my $DEBUG = 0;
 
 my @exit_cmd = ();
 my @exit_value = ();
@@ -21,7 +21,17 @@ my @NAGIOS_EXIT=('OK', 'WARNING', 'CRITICAL', 'UNKNOWN');
 
 
 # parse command line options 
-if (defined($ARGV[0]) and $ARGV[0] =~ /^(-h|--help)$/) {
+my $DEBUG = 0;
+my $opt_help = 0;
+my $cmdfile = '';
+
+my $result = GetOptions ( "help|h" => \$opt_help,
+                          "file|f=s"   => \$cmdfile,
+                          "debug=i"  => \$DEBUG,
+                          );
+                                                              
+
+if ($opt_help) {
     print <<EOF;
 check-many v$VERSION
 
@@ -32,10 +42,13 @@ and joining all performance data returned.
 Options:
 \t-h, --help
 \t\tPrint this help screen
+\t--debug
+\t\tset debug level
 
 EOF
-    exit 0;
+    exit 99;
 }
+
 
 
 # execute command if present
@@ -128,7 +141,14 @@ sub is_new_max
 
 # read commands from STDIN - FIXME see other options from https://nagios-plugins.org/doc/check-many.html
 my @commands=();
-while (<STDIN>) {
+my $CMD_FD;
+if ($cmdfile) {
+  open $CMD_FD, '<', $cmdfile or die "can't open $cmdfile: $!";
+} else {
+  $CMD_FD = *STDIN;
+}
+
+while (<$CMD_FD>) {
   chomp;
   push @commands, $_;
 }
