@@ -9,7 +9,7 @@ use strict;
 
 my @paths = qw(/usr/local/lib/nagios/plugins /usr/lib/nagios/plugins /usr/local/bin /usr/local/sbin /usr/bin /usr/sbin /bin /sbin);
 
-my $DEBUG = 1;
+my $DEBUG = 0;
 
 my @exit_cmd = ();
 my @exit_value = ();
@@ -115,7 +115,7 @@ sub is_new_max
 {
     my ($cur, $old) = @_;
     
-    $DEBUG > 2 && print "check $old <=> $cur\n";
+    $DEBUG > 2 && print "check $old (old) <=> $cur (new)\n";
     die "invalid return value $old => $cur" if ($old > 3) or ($old < 0) or ($cur > 3) or ($cur < 0);
     
     if ($old == 0) { return 1 }			# if we were OK before, anything else is more important!
@@ -159,14 +159,14 @@ my $perfdata = '';
 
 # consolidate all checks (group by same cmd)
 for my $x (0 .. $#exit_cmd) {
+    if ($exit_value[$x] > 0) { $err_count++; }
     if (is_new_max($exit_value[$x], $max_exit_level)) {	# final result is worst result we've had (0=OK, 3=UNKNOWN, 1=WARNING, 2=CRITICAL);
         $max_exit_level = $exit_value[$x];
         $output_code = $exit_code[$x];
         if ($exit_value[$x]) {	# in non-OK status (needed because is_new_max(0,0) will return TRUE)
-            $err_count++;
-            $last_err = "err(s). $err_count non-OK msgs, last is '" . $exit_cmd[$x] ."': " . $exit_txt[$x];
+            $last_err = "last is '" . $exit_cmd[$x] ."': " . $exit_txt[$x];
             $last_err =~ s/\n/; /g;
-            $DEBUG > 1 && print "\t$err_count msgs, cur= " . $exit_txt[$x] . "\n";
+            $DEBUG > 1 && print "\t$err_count error msgs, cur= " . $exit_txt[$x] . "\n";
         }
     }
     $DEBUG > 1 && print "x=$x, " . $exit_cmd[$x] . " = $exit_txt[$x] --- $exit_perf[$x]\n";
@@ -174,6 +174,7 @@ for my $x (0 .. $#exit_cmd) {
     $perfdata .= " --- $exit_perf[$x]" if $exit_perf[$x];
     $perfdata .= "\n";
 }
+if ($max_exit_level) { $last_err = "err(s). $err_count non-OK msgs, " . $last_err; }
 
 $DEBUG > 0 && print "\n---- FINAL RESULT ----\n";
 print "$output_code $last_err|$perfdata\n";
