@@ -84,18 +84,19 @@ sub handle_cmd
          $_msg = $3;
          $_perf = defined($5) ? $5 : '';
 
+         $_msg = "${_prefix}${_code}: $_msg";
          $_prefix =~ s{\s*$}{};
-         $_msg = "$_prefix $_code: $_msg"
          # if $_msg ne 'OK' # include WARNING/ERROR string only if not-OK
          ;
          
-         $DEBUG > 2 && print "\tfound output:\tprefix=$_prefix, code=$_code, msg=$_msg\n";
+         $DEBUG > 2 && print "\tfound pre:\tprefix=$_prefix, code=$_code\n";
+         $DEBUG > 2 && print "\tfound msg:\t$_msg\n";
          $DEBUG > 2 && print "\tfound perf:\t$_perf\n" if $_perf;
     } else {
          $_code = $NAGIOS_EXIT[$exit_code];
-         $_msg = "unknown output (${_code}?): $output"; chomp($_msg);
+         $_msg = "${_code} (?): $output"; chomp($_msg);
          $_perf = '';
-         $DEBUG > 2 && print "\t$_msg\n";
+         $DEBUG > 2 && print "\tupdate msg:\t$_msg\n";
          if ($exit_code == 0) { $exit_code = 3; $_code = 'UNKNOWN'; } # if error level indicated OK, but output is unparsable, set it to UNKNOWN
     }
 
@@ -187,7 +188,7 @@ for my $x (0 .. $#exit_cmd) {
         $output_code = $exit_code[$x];
         if ($exit_value[$x]) {	# in non-OK status (needed because is_new_max(0,0) will return TRUE, etc)
             $err_count++;
-            $last_err = "err(s). $err_count non-OK msgs, last is " . $exit_cmd[$x] .": " . $exit_txt[$x];
+            $last_err = "err(s). $err_count non-OK msgs, last is '" . $exit_cmd[$x] ."': " . $exit_txt[$x];
             $last_err =~ s/\n/; /g;
             $DEBUG > 1 && print "\t$err_count msgs, cur= " . $exit_txt[$x] . "\n";
         }
