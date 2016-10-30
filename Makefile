@@ -20,5 +20,5 @@ checkdeb:
 	cd .. && lintian --info `ls -1t *deb | head -n 1`
 
 publish: all deb
-	cd .. && reprepro include jessie `ls -1t *.changes | head -n 1`
+	cd .. && reprepro include wheezy `ls -1t *.changes | head -n 1`
 	git commit -a

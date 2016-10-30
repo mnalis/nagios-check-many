@@ -1,4 +1,10 @@
-nagios-smart-multi (1.00) jessie; urgency=low
+nagios-check-many (1.01) wheezy; urgency=medium
+
+  * first working version...
+
+ -- Matija Nalis (Tomsoft Debian repo) <mnalis-debian@axe.tomsoft.hr>  Sun, 30 Oct 2016 13:40:06 +0100
+
+nagios-check-many (1.00) wheezy; urgency=low
 
   * Initial Release (loosely based on nagios-smart-multi)
 
