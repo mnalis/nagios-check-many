@@ -76,7 +76,7 @@ sub handle_cmd
     my $_perf;
     
     $DEBUG > 2 && print "  for cmd=" . join(' ', @_) . ": \n";
-    $DEBUG > 2 && print "\texit level=$NAGIOS_EXIT[$exit_code]\n";
+    $DEBUG > 2 && print "\texit level:\t$NAGIOS_EXIT[$exit_code]\n";
 #    print "\tfull=$output, code=$?\n";
     if ($output =~ /^(\S+\s+)?(OK|CRITICAL|WARNING|UNKNOWN)\s*[-:]?\s+(.*?)(\|(.*))?$/) {
          my $_prefix = $1 || '';
@@ -89,7 +89,8 @@ sub handle_cmd
          # if $_msg ne 'OK' # include WARNING/ERROR string only if not-OK
          ;
          
-         $DEBUG > 2 && print "\tfound output: prefix=$_prefix, code=$_code, msg=$_msg, perf=$_perf\n";
+         $DEBUG > 2 && print "\tfound output:\tprefix=$_prefix, code=$_code, msg=$_msg\n";
+         $DEBUG > 2 && print "\tfound perf:\t$_perf\n" if $_perf;
     } else {
          my $_pre = $NAGIOS_EXIT[$exit_code];
          $exit_code = 3;
@@ -125,11 +126,11 @@ while (<STDIN>) {
 
 if ($DEBUG > 1) {
   print "\n\n\n";
-  print "commands = " . join (", ", @exit_cmd) . "\n\n";
+  print "commands = " . join ("\n", @exit_cmd) . "\n\n";
   print "values = " . join (", ", @exit_value) . "\n\n";
   print "code = " . join (", ", @exit_code) . "\n\n";
-  print "txt = " . join (", ", @exit_txt) . "\n\n";
-  print "perf = " . join (", ", @exit_perf) . "\n\n";
+  print "txt = " . join ("\n", @exit_txt) . "\n\n";
+  print "perf = " . join ("\n", @exit_perf) . "\n\n";
 }
 
 
