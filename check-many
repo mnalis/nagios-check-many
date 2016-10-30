@@ -18,6 +18,8 @@ my @exit_code = ();
 my @exit_txt = ();
 my @exit_perf = ();
 
+my @NAGIOS_EXIT=('OK', 'WARNING', 'CRITICAL', 'UNKNOWN');
+
 
 # parse command line options 
 if (defined($ARGV[0]) and $ARGV[0] =~ /^(-h|--help)$/) {
@@ -64,6 +66,9 @@ sub handle_cmd
     if ($exit_sig) {
        $exit_code = 3; $output = "UNKNOWN: exit_sig=$exit_sig " . $output;
     }
+    if ($exit_code > 3) {
+       $exit_code = 3; $output = "UNKNOWN: exit_code=$exit_sig " . $output;
+    }
     
     
     my $_code;
@@ -71,6 +76,7 @@ sub handle_cmd
     my $_perf;
     
     $DEBUG > 2 && print "  for cmd=" . join(' ', @_) . ": \n";
+    $DEBUG > 2 && print "\texit level=$NAGIOS_EXIT[$exit_code]\n";
 #    print "\tfull=$output, code=$?\n";
     if ($output =~ /^(\S+\s+)?(OK|CRITICAL|WARNING|UNKNOWN)\s*[-:]?\s+(.*?)(\|(.*))?$/) {
          my $_prefix = $1 || '';
@@ -79,15 +85,18 @@ sub handle_cmd
          $_perf = defined($5) ? $5 : '';
 
          $_prefix =~ s{\s*$}{};
-         if ($_msg ne 'OK') { $_msg = "$_prefix $_code: $_msg" }	# include WARNING/ERROR string if not-OK
+         $_msg = "$_prefix $_code: $_msg"
+         # if $_msg ne 'OK' # include WARNING/ERROR string only if not-OK
+         ;
          
          $DEBUG > 2 && print "\tfound output: prefix=$_prefix, code=$_code, msg=$_msg, perf=$_perf\n";
     } else {
+         my $_pre = $NAGIOS_EXIT[$exit_code];
          $exit_code = 3;
          $_code = 'UNKNOWN';
-         $_msg = "\tunknown output: $output"; chomp($_msg);
+         $_msg = "unknown output (${_pre}?): $output"; chomp($_msg);
          $_perf = '';
-         $DEBUG > 2 && print "$_msg\n";
+         $DEBUG > 2 && print "\t$_msg\n";
     }
 
     push @exit_cmd, join (' ', @_);
