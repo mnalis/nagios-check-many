@@ -64,10 +64,10 @@ sub handle_cmd
     my $exit_code = $? >> 8;
     
     if ($exit_sig) {
-       $exit_code = 3; $output = "UNKNOWN: exit_sig=$exit_sig " . $output;
+       $exit_code = 3; $output = "UNKNOWN: kill_signal=$exit_sig; " . $output;
     }
     if ($exit_code > 3) {
-       $exit_code = 3; $output = "UNKNOWN: exit_code=$exit_sig " . $output;
+       $exit_code = 3; $output = "UNKNOWN: exit_code=$exit_code; " . $output;
     }
     
     
@@ -92,12 +92,11 @@ sub handle_cmd
          $DEBUG > 2 && print "\tfound output:\tprefix=$_prefix, code=$_code, msg=$_msg\n";
          $DEBUG > 2 && print "\tfound perf:\t$_perf\n" if $_perf;
     } else {
-         my $_pre = $NAGIOS_EXIT[$exit_code];
-         $exit_code = 3;
-         $_code = 'UNKNOWN';
-         $_msg = "unknown output (${_pre}?): $output"; chomp($_msg);
+         $_code = $NAGIOS_EXIT[$exit_code];
+         $_msg = "unknown output (${_code}?): $output"; chomp($_msg);
          $_perf = '';
          $DEBUG > 2 && print "\t$_msg\n";
+         if ($exit_code == 0) { $exit_code = 3; $_code = 'UNKNOWN'; } # if error level indicated OK, but output is unparsable, set it to UNKNOWN
     }
 
     push @exit_cmd, join (' ', @_);
