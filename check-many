@@ -1,16 +1,15 @@
-#!/usr/bin/perl -w
-# GPLv3+ Matija Nalis <mnalis-perl@axe.tomsoft.hr> started 2016-10-28
-# call multiple nagios plugins and check status
+#!/usr/bin/perl -w GPLv3+ Matija Nalis <mnalis-perl@axe.tomsoft.hr> started
+# 2016-10-28 call multiple nagios plugins and check status
 
 # FIXME use -T
 
-our $VERSION='1.00';
+our $VERSION='1.01';
 
 use strict;
 
 my @paths = qw(/usr/local/lib/nagios/plugins /usr/lib/nagios/plugins /usr/local/bin /usr/local/sbin /usr/bin /usr/sbin /bin /sbin);
 
-my $DEBUG = 9;
+my $DEBUG = 1;
 
 my @exit_cmd = ();
 my @exit_value = ();
@@ -107,46 +106,6 @@ sub handle_cmd
     push @exit_perf, $_perf;
 }
 
-### MAIN ###
-
-# read commands from STDIN - FIXME see other options from https://nagios-plugins.org/doc/check-many.html
-my @commands=();
-while (<STDIN>) {
-  chomp;
-  push @commands, $_;
-}
-
-# execute all commands in order
-{
-  foreach my $full (@commands) {
-    my ($cmd, @args) = split ' ', $full;
-    handle_cmd ($cmd, @args);
-  }
-}
-
-if ($DEBUG > 1) {
-  print "\n\n\n";
-  print "commands =\n" . join ("\n", @exit_cmd) . "\n\n----------------------\n";
-  print "values =\n" . join ("\n", @exit_value) . "\n\n----------------------\n";
-  print "code =\n" . join ("\n", @exit_code) . "\n\n----------------------\n";
-  print "txt =\n" . join ("\n", @exit_txt) . "\n\n----------------------\n";
-  print "perf =\n" . join ("\n", @exit_perf) . "\n\n----------------------\n";
-}
-
-
-my $max_exit_level = 0;
-my $output_code = '';
-my $last_err = 'All checks OK.';
-my $err_count = 0;
-my $output_text = '';
-my $perfdata = '';
-
-my $last_cmd = $exit_cmd[0];
-my $last_msg = '';
-my $last_perf = '';
-
-my @all = ();
-
 # check if we have new maximum value 
 # note that it is more complicated than simple integer check, as UNKNOWN state is not worst!
 #
@@ -165,67 +124,57 @@ sub is_new_max
     if ($old == 3) { return ($cur != 0) }	# if we were UNKNOWN before, only OK is less important
 }
 
-# consolidate output data
-sub consolidate {
-    my ($x) = @_;
-    $DEBUG > 1 && print "consolidating at $x, last_cmd=$last_cmd\n";
-    $DEBUG > 1 && print "full msg=$last_msg\n";
-    $DEBUG > 1 && print "full perf=$last_perf\n\n";
+### MAIN ###
 
-    $last_msg =~ s/\n/, /g;
-    push @all, { cmd=> $last_cmd, msg => $last_msg, perf => $last_perf };
-    
-    $last_msg = '';
-    $last_perf = '';
-    $last_cmd = $exit_cmd[$x];
+# read commands from STDIN - FIXME see other options from https://nagios-plugins.org/doc/check-many.html
+my @commands=();
+while (<STDIN>) {
+  chomp;
+  push @commands, $_;
 }
+
+# execute all commands in order
+{
+  foreach my $full (@commands) {
+    my ($cmd, @args) = split ' ', $full;
+    handle_cmd ($cmd, @args);
+  }
+}
+
+if ($DEBUG > 0) {
+  print "\n\n\n";
+  print "commands =\n" . join ("\n", @exit_cmd) . "\n\n----------------------\n";
+  print "values =\n" . join ("\n", @exit_value) . "\n\n----------------------\n";
+  print "code =\n" . join ("\n", @exit_code) . "\n\n----------------------\n";
+  print "txt =\n" . join ("\n", @exit_txt) . "\n\n----------------------\n";
+  print "perf =\n" . join ("\n", @exit_perf) . "\n\n----------------------\n";
+}
+
+
+my $max_exit_level = 0;
+my $output_code = '';
+my $last_err = 'All checks OK.';
+my $err_count = 0;
+my $perfdata = '';
 
 # consolidate all checks (group by same cmd)
 for my $x (0 .. $#exit_cmd) {
-    consolidate($x) if ($exit_cmd[$x] ne $last_cmd);
     if (is_new_max($exit_value[$x], $max_exit_level)) {	# final result is worst result we've had (0=OK, 3=UNKNOWN, 1=WARNING, 2=CRITICAL);
         $max_exit_level = $exit_value[$x];
         $output_code = $exit_code[$x];
-        if ($exit_value[$x]) {	# in non-OK status (needed because is_new_max(0,0) will return TRUE, etc)
+        if ($exit_value[$x]) {	# in non-OK status (needed because is_new_max(0,0) will return TRUE)
             $err_count++;
             $last_err = "err(s). $err_count non-OK msgs, last is '" . $exit_cmd[$x] ."': " . $exit_txt[$x];
             $last_err =~ s/\n/; /g;
             $DEBUG > 1 && print "\t$err_count msgs, cur= " . $exit_txt[$x] . "\n";
         }
     }
-    $last_msg .= ($last_msg?', ':'') . $exit_txt[$x];
-    $last_perf .= ($last_perf?' ':'') . $exit_perf[$x];
-    $DEBUG > 1 && print "x=$x, " . $exit_cmd[$x] . "\n";
-}
-consolidate($#exit_cmd);
-
-
-# join output for multiple cmds if it is the same
-my $prev_output = '';
-my @prev_disks = ();
-@all = sort {($a->{msg} cmp $b->{msg}) || $a->{disk} cmp $b->{disk} } @all;	# sort by output message (and disk)
-
-
-# merge multiple messages for different disks
-sub merge_msg
-{
-    return unless $prev_output;
-    $output_text .= join(', ', @prev_disks) . ": $prev_output\n";
-    $DEBUG > 1 && print "merge_msg prev=$prev_output for disks " . join(', ', @prev_disks) . "\n";
-    @prev_disks = ();
+    $DEBUG > 1 && print "x=$x, " . $exit_cmd[$x] . " = $exit_txt[$x] --- $exit_perf[$x]\n";
+    $perfdata .= "$exit_txt[$x]";	# always keep output msgs and perfdata in same order
+    $perfdata .= " --- $exit_perf[$x]" if $exit_perf[$x];
+    $perfdata .= "\n";
 }
 
-for my $x (0 .. $#all) {
-    if ($prev_output ne $all[$x]->{msg}) { merge_msg() }
-    $perfdata .= $all[$x]->{disk} . ': ' .  $all[$x]->{perf} . "\n";
-    $DEBUG > 2 && print "x=$x, disk=" . $all[$x]->{disk} . ", msg=" . $all[$x]->{msg} . "\n";
-    $DEBUG > 3 && print "x=$x, disk=" . $all[$x]->{disk} . ", perf=" . $all[$x]->{perf} . "\n";
-    $prev_output = $all[$x]->{msg};
-    push @prev_disks, $all[$x]->{disk};
-}
-merge_msg();
-chomp($output_text);
-
-
-print "$output_code $last_err\n$output_text|$perfdata\n";
+$DEBUG > 0 && print "\n---- FINAL RESULT ----\n";
+print "$output_code $last_err|$perfdata\n";
 exit $max_exit_level;
