@@ -10,8 +10,7 @@ Homepage: http://debian.tomsoft.hr/
 
 Package: nagios-check-many
 Architecture: all
-Depends: ${misc:Depends}, ${perl:Depends}
-Suggests: nagios3 | nagios-nrpe-server
+Depends: ${misc:Depends}, ${perl:Depends}, nagios-nrpe-server|icinga-common|icinga-cgi|nagios3
 Recommends: nagios-plugins-basic
 Description: nagios plugin to aggregate results of multiple other nagios
  plugin checks, returning most critical status of them all and joining

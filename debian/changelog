@@ -1,3 +1,10 @@
+nagios-check-many (1.03) wheezy; urgency=medium
+
+  * ignore commented-out commands
+  * depends on icinga|nagios
+
+ -- Matija Nalis (Tomsoft Debian repo) <mnalis-debian@axe.tomsoft.hr>  Sun, 30 Oct 2016 19:07:06 +0100
+
 nagios-check-many (1.02) wheezy; urgency=medium
 
   * implement --file
