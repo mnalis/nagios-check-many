@@ -25,7 +25,10 @@ my $DEBUG = 0;
 my $opt_help = 0;
 my $cmdfile = '';
 
-my ($opt_shell, $opt_delimiter, $opt_process, $opt_output);
+my $opt_shell = undef;
+my $opt_delimiter = undef;
+my $opt_process = undef;
+my $opt_output = undef;
 
 my $result = GetOptions ( "help|h" => \$opt_help,
                           "file|f=s"   => \$cmdfile,
@@ -102,9 +105,9 @@ sub handle_cmd
     }
     
     
-    my $_code;
-    my $_msg;
-    my $_perf;
+    my $_code = undef;
+    my $_msg = undef;
+    my $_perf = undef;
     
     $DEBUG > 2 && print "  for cmd=" . join(' ', @_) . ": \n";
     $DEBUG > 2 && print "\texit level:\t$NAGIOS_EXIT[$exit_code]\n";
