@@ -128,7 +128,7 @@ sub handle_cmd
          $_msg = "${_code} (?): $output"; chomp($_msg);
          $_perf = '';
          $DEBUG > 2 && print "\tupdate msg:\t$_msg\n";
-         if ($exit_code == 0) { $exit_code = 3; $_code = 'UNKNOWN'; } # if error level indicated OK, but output is unparsable, set it to UNKNOWN
+         #if ($exit_code == 0) { $exit_code = 3; $_code = 'UNKNOWN'; } # if error level indicated OK, but output is unparsable, set it to UNKNOWN -- DISABLED: should always use return code (https://nagios-plugins.org/doc/guidelines.html#AEN33)
     }
 
     push @exit_cmd, join (' ', @_);

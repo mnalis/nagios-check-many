@@ -1,4 +1,16 @@
-(1) implement other options from https://nagios-plugins.org/doc/check-many.html 
+(1) safety. 
+	- Use -T. 
+	- See https://nagios-plugins.org/doc/guidelines.html#SYSCMDAUXFILES
+
+(2) use nagios utils.pm
+	use lib "/usr/local/nagios/libexec";
+	use utils qw(...);
+    and initialize variables always. 
+    
+
+(3) see https://nagios-plugins.org/doc/guidelines.html#PERLPLUGIN
+
+(4) implement other options from https://nagios-plugins.org/doc/check-many.html 
 
 -s, --shell=<always|never|auto>
    Specify when a shell should be invoked for executing commands.  "always"
