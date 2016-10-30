@@ -126,11 +126,11 @@ while (<STDIN>) {
 
 if ($DEBUG > 1) {
   print "\n\n\n";
-  print "commands = " . join ("\n", @exit_cmd) . "\n\n";
-  print "values = " . join (", ", @exit_value) . "\n\n";
-  print "code = " . join (", ", @exit_code) . "\n\n";
-  print "txt = " . join ("\n", @exit_txt) . "\n\n";
-  print "perf = " . join ("\n", @exit_perf) . "\n\n";
+  print "commands =\n" . join ("\n", @exit_cmd) . "\n\n----------------------\n";
+  print "values =\n" . join ("\n", @exit_value) . "\n\n----------------------\n";
+  print "code =\n" . join ("\n", @exit_code) . "\n\n----------------------\n";
+  print "txt =\n" . join ("\n", @exit_txt) . "\n\n----------------------\n";
+  print "perf =\n" . join ("\n", @exit_perf) . "\n\n----------------------\n";
 }
 
 
