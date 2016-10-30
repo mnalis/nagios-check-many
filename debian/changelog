@@ -1,3 +1,9 @@
+nagios-check-many (1.02) wheezy; urgency=medium
+
+  * implement --file
+
+ -- Matija Nalis (Tomsoft Debian repo) <mnalis-debian@axe.tomsoft.hr>  Sun, 30 Oct 2016 18:31:59 +0100
+
 nagios-check-many (1.01) wheezy; urgency=medium
 
   * first working version...
