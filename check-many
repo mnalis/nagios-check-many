@@ -169,6 +169,8 @@ if ($cmdfile) {
 
 while (<$CMD_FD>) {
   chomp;
+  next if /^\s*$/;
+  next if /^\s*#/;
   push @commands, $_;
 }
 
