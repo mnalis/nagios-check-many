@@ -1,3 +1,10 @@
+nagios-check-many (1.05) wheezy; urgency=medium
+
+  * do not show sensitive information in nagios output (like check command
+    arguments which may contain passwords etc)
+
+ -- Matija Nalis (Tomsoft Debian repo) <mnalis-debian@axe.tomsoft.hr>  Mon, 31 Oct 2016 10:45:28 +0100
+
 nagios-check-many (1.04) wheezy; urgency=medium
 
   * separete output and perf data

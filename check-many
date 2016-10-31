@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w GPLv3+ Matija Nalis <mnalis-perl@axe.tomsoft.hr> started
 # 2016-10-28 call multiple nagios plugins and check status
 
-# FIXME use -T
+# FIXME use -T, see TODO.txt
 
-our $VERSION='1.04';
+our $VERSION='1.05';
 
 use strict;
 use Getopt::Long qw (:config auto_version);
@@ -211,7 +211,7 @@ for $x (0 .. $#exit_cmd) {
         $max_exit_level = $exit_value[$x];
         $output_code = $exit_code[$x];
         if ($exit_value[$x]) {	# in non-OK status (needed because is_new_max(0,0) will return TRUE)
-            $last_err = "last is '" . $exit_cmd[$x] ."': " . $exit_txt[$x];
+            $last_err = "last ($x) is " . $exit_txt[$x];
             $last_err =~ s/\n/; /g;
             $DEBUG > 1 && print "\t$err_count error msgs, cur= " . $exit_txt[$x] . "\n";
         }
