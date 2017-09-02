@@ -1,5 +1,5 @@
-#!/usr/bin/perl -w GPLv3+ Matija Nalis <mnalis-perl@axe.tomsoft.hr> started
-# 2016-10-28 call multiple nagios plugins and check status
+#!/usr/bin/perl -w
+# GPLv3+ Matija Nalis <mnalis-perl@axe.tomsoft.hr> started 2016-10-28 call multiple nagios plugins and check status
 
 # FIXME use -T, see TODO.txt
 
