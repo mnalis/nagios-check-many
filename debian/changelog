@@ -1,3 +1,9 @@
+nagios-check-many (1.06) wheezy; urgency=medium
+
+  * fix total number of checks
+
+ -- Matija Nalis (Tomsoft Debian repo) <mnalis-debian@axe.tomsoft.hr>  Sun, 03 Sep 2017 03:11:42 +0200
+
 nagios-check-many (1.05) wheezy; urgency=medium
 
   * do not show sensitive information in nagios output (like check command

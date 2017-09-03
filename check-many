@@ -227,5 +227,6 @@ for $x (0 .. $#exit_cmd) {
 if ($max_exit_level) { $last_err = "err(s). $err_count non-OK msgs, " . $last_err; }
 
 $DEBUG > 0 && print "\n---- FINAL RESULT ----\n";
+my $x = scalar @exit_cmd;	# NB perl annoyance: "for $x" is actually ALWAYS "for my $x"
 print "$output_code $last_err|$err_count/$x total checks failed\n$output_data|$perf_data\n";
 exit $max_exit_level;
