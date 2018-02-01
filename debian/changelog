@@ -1,3 +1,9 @@
+nagios-check-many (1.06b) wheezy; urgency=low
+
+  * fix warning only
+
+ -- Matija Nalis (Tomsoft Debian repo) <mnalis-debian@axe.tomsoft.hr>  Thu, 01 Feb 2018 12:52:12 +0100
+
 nagios-check-many (1.06) wheezy; urgency=medium
 
   * fix total number of checks
