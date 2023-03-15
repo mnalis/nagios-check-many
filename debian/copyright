@@ -34,7 +34,7 @@ Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
 
 The Debian packaging is:
 
-    Copyright (C) 2016 Matija Nalis <mnalis-debian@axe.tomsoft.hr>
+    Copyright (C) 2016,2023 Matija Nalis <mnalis-debian@axe.tomsoft.hr>
 
 # Please chose a license for your packaging work. If the program you package
 # uses a mainstream license, using the same license is the safest choice.

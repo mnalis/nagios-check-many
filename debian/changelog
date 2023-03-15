@@ -1,3 +1,10 @@
+nagios-check-many (1.06c) wheezy; urgency=medium
+
+  * clean
+  * debian packaging updates
+
+ -- Matija Nalis (Tomsoft Debian repo) <mnalis-debian@axe.tomsoft.hr>  Mon, 09 Jan 2023 16:34:14 +0100
+
 nagios-check-many (1.06b) wheezy; urgency=low
 
   * fix warning only
